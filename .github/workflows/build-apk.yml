@@ -14,11 +14,9 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1. Mengambil source code proyek
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Memasang dependensi sistem
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -41,64 +39,68 @@ jobs:
             libffi-dev \
             libssl-dev
 
-      # 3. Memastikan Java 17 digunakan
       - name: Configure Java 17
         shell: bash
         run: |
-          JAVA_PATH="$(dirname "$(dirname "$(readlink -f "$(which java)")")")"
+          JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
-          if [ ! -x "$JAVA_PATH/bin/java" ]; then
-            JAVA_PATH="/usr/lib/jvm/java-17-openjdk-amd64"
+          if [ ! -x "$JAVA_HOME/bin/java" ]; then
+            echo "Java 17 tidak ditemukan: $JAVA_HOME"
+            exit 1
           fi
 
-          echo "JAVA_HOME=$JAVA_PATH" >> "$GITHUB_ENV"
-          echo "$JAVA_PATH/bin" >> "$GITHUB_PATH"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
 
-          echo "Java location:"
-          readlink -f "$JAVA_PATH/bin/java"
+          sudo update-alternatives --set java "$JAVA_HOME/bin/java"
 
-          "$JAVA_PATH/bin/java" -version
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
 
-      # 4. Membuat virtual environment Python
       - name: Setup Python environment
         run: |
           python3 -m venv .venv
-          .venv/bin/python -m pip install --upgrade pip setuptools wheel
 
-      # 5. Memasang Buildozer
-      - name: Install Buildozer
-        run: |
+          .venv/bin/python -m pip install --upgrade \
+            pip setuptools wheel
+
           .venv/bin/python -m pip install \
             "git+https://github.com/kivy/buildozer" \
-            legacy-cgi \
-            "cython==0.29.34"
+            "cython==0.29.34" \
+            legacy-cgi
 
-          .venv/bin/buildozer --version
-
-      # 6. Memeriksa konfigurasi build
-      - name: Verify build configuration
+      - name: Verify tools
+        shell: bash
         run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export PATH="$JAVA_HOME/bin:$PWD/.venv/bin:$PATH"
+
           echo "===== JAVA ====="
           java -version
 
-          echo "===== BUILD CONFIGURATION ====="
-          grep -E \
-            '^(requirements|android.api|android.minapi|android.target_sdk|android.ndk|android.ndk_api|android.archs|p4a.branch|p4a.commit) *=' \
-            buildozer.spec || true
+          echo "===== PYTHON ====="
+          python --version
 
-      # 7. Membuat APK
+          echo "===== CYTHON ====="
+          command -v cython
+          cython --version
+
+          echo "===== BUILDOZER ====="
+          buildozer --version
+
       - name: Build debug APK
         shell: bash
         run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export PATH="$JAVA_HOME/bin:$PWD/.venv/bin:$PATH"
+
           set -o pipefail
-          export JAVA_HOME
-          export PATH="$JAVA_HOME/bin:$PATH"
 
           java -version
+          cython --version
 
-          .venv/bin/buildozer -v android debug
+          buildozer -v android debug
 
-      # 8. Mengunggah APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
