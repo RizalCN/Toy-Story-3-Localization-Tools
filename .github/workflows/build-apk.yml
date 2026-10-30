@@ -1,4 +1,3 @@
-
 name: Build Safe Translator APK
 
 on:
@@ -6,76 +5,30 @@ on:
   push:
     paths:
       - '**.py'
-      - '**.txt'
       - 'buildozer.spec'
       - '.github/workflows/build-apk.yml'
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip python3-venv python3-dev \
-            git zip unzip \
-            openjdk-17-jdk \
-            build-essential autoconf automake libtool \
-            pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev cmake libffi-dev libssl-dev
-
-      - name: Configure Java 17
+          sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk \
+            build-essential autoconf automake libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+      - name: Install Buildozer
         run: |
-          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> "$GITHUB_ENV"
-          echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> "$GITHUB_PATH"
-          sudo update-alternatives --set java \
-            /usr/lib/jvm/java-17-openjdk-amd64/bin/java
-          java -version
-
-      - name: Install Python build tools
+          python3 -m pip install --upgrade "pip<26" setuptools wheel
+          python3 -m pip install "buildozer==1.5.0" "Cython==0.29.36"
+      - name: Show pinned Android toolchain
         run: |
-          python3 -m pip install --user --upgrade \
-            pip setuptools wheel
-
-          python3 -m pip install --user \
-            "git+https://github.com/kivy/buildozer" \
-            "cython==0.29.34" \
-            legacy-cgi
-
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Verify build environment
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-
-          echo "===== JAVA ====="
-          java -version
-
-          echo "===== PYTHON ====="
-          python3 --version
-
-          echo "===== CYTHON ====="
-          cython --version
-
-          echo "===== BUILDOZER ====="
-          buildozer --version
-
+          grep -E '^(android\.api|android\.minapi|android\.ndk|p4a\.branch|requirements) *=' buildozer.spec
       - name: Build debug APK
-        shell: bash
-        run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export PATH="$JAVA_HOME/bin:$HOME/.local/bin:$PATH"
-
-          set -o pipefail
-          java -version
-          cython --version
-          buildozer -v android debug
-
+        run: buildozer -v android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
