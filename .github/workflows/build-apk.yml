@@ -27,6 +27,9 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install buildozer cython
 
+      - name: Clean previous Android build
+        run: buildozer android clean
+
       - name: Build debug APK
         run: buildozer -v android debug
 
