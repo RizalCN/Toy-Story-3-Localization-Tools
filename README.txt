@@ -1,4 +1,4 @@
-Toy Story 3 - DCT Safe Translator
+Toy Story 3 - DCT and ZIP Safe Translator
 =================================
 
 Isi:
