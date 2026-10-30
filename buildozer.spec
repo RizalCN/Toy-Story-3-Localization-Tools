@@ -13,8 +13,10 @@ android.api = 33
 android.minapi = 23
 android.target_sdk = 28
 android.ndk = 25b
+# Pin Python-for-Android: master pulled CPython 3.14.2, which fails on Android API 23
+p4a.branch = v2024.01.21
 android.accept_sdk_license = True
-android.archs = arm64-v8a
+android.archs = arm64-v8a, armeabi-v7a
 android.allow_backup = False
 
 [buildozer]

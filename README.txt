@@ -36,3 +36,14 @@ Encoding:
 Penting:
 Tool ini memakai offset string pool 0x229B9 yang terdeteksi pada DCT Toy Story 3 yang dianalisis.
 Jika file versi lain memiliki struktur berbeda, ekspor/impor tidak boleh diasumsikan kompatibel.
+
+
+Perbaikan build Android (30 Oktober 2026)
+-----------------------------------------
+- Workflow GitHub Actions mengunci Buildozer 1.5.0 dan Cython 0.29.36.
+- buildozer.spec mengunci Python-for-Android ke tag v2024.01.21, bukan master.
+- Ini menghindari resep CPython 3.14.2 yang pada log sebelumnya gagal saat kompilasi
+  remote_debugging.c karena deklarasi preadv/pwritev tidak tersedia untuk target API 23.
+- Build APK harus dijalankan ulang lewat GitHub Actions; file ZIP ini bukan APK.
+- Jika build berikutnya gagal pada tahap berbeda, kirim log baru karena toolchain yang
+  dipin masih perlu diverifikasi oleh build nyata di GitHub Actions.
