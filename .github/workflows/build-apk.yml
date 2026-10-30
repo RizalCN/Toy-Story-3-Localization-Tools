@@ -1,0 +1,39 @@
+
+name: Build Safe Translator APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**.py'
+      - 'buildozer.spec'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential autoconf automake libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install buildozer cython
+
+      - name: Build debug APK
+        run: buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Safe-Translator-Android-APK
+          path: bin/*.apk
+          if-no-files-found: error
+          retention-days: 14
