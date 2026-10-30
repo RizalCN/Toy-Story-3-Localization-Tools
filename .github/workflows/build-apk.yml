@@ -1,3 +1,4 @@
+
 name: Build Safe Translator APK
 
 on:
@@ -21,68 +22,44 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            python3-pip \
-            python3-venv \
-            git \
-            zip \
-            unzip \
+            python3-pip python3-venv python3-dev \
+            git zip unzip \
             openjdk-17-jdk \
-            build-essential \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            cmake \
-            libffi-dev \
-            libssl-dev
+            build-essential autoconf automake libtool \
+            pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev cmake libffi-dev libssl-dev
 
       - name: Configure Java 17
-        shell: bash
         run: |
-          JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-
-          if [ ! -x "$JAVA_HOME/bin/java" ]; then
-            echo "Java 17 tidak ditemukan: $JAVA_HOME"
-            exit 1
-          fi
-
-          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
-          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
-
-          sudo update-alternatives --set java "$JAVA_HOME/bin/java"
-
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> "$GITHUB_ENV"
+          echo "/usr/lib/jvm/java-17-openjdk-amd64/bin" >> "$GITHUB_PATH"
+          sudo update-alternatives --set java \
+            /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           java -version
-          echo "JAVA_HOME=$JAVA_HOME"
 
-      - name: Setup Python environment
+      - name: Install Python build tools
         run: |
-          python3 -m venv .venv
-
-          .venv/bin/python -m pip install --upgrade \
+          python3 -m pip install --user --upgrade \
             pip setuptools wheel
 
-          .venv/bin/python -m pip install \
+          python3 -m pip install --user \
             "git+https://github.com/kivy/buildozer" \
             "cython==0.29.34" \
             legacy-cgi
 
-      - name: Verify tools
-        shell: bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify build environment
         run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export PATH="$JAVA_HOME/bin:$PWD/.venv/bin:$PATH"
+          export PATH="$HOME/.local/bin:$PATH"
 
           echo "===== JAVA ====="
           java -version
 
           echo "===== PYTHON ====="
-          python --version
+          python3 --version
 
           echo "===== CYTHON ====="
-          command -v cython
           cython --version
 
           echo "===== BUILDOZER ====="
@@ -92,13 +69,11 @@ jobs:
         shell: bash
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export PATH="$JAVA_HOME/bin:$PWD/.venv/bin:$PATH"
+          export PATH="$JAVA_HOME/bin:$HOME/.local/bin:$PATH"
 
           set -o pipefail
-
           java -version
           cython --version
-
           buildozer -v android debug
 
       - name: Upload APK
