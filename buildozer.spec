@@ -9,6 +9,7 @@ requirements = python3,kivy
 orientation = portrait
 fullscreen = 0
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+android.ndk_api = 24
 android.api = 33
 android.minapi = 23
 android.target_sdk = 28
