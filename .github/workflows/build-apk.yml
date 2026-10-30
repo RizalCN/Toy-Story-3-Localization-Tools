@@ -1,4 +1,3 @@
-
 name: Build Safe Translator APK
 
 on:
@@ -20,15 +19,32 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential autoconf automake libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+          sudo apt-get install -y \
+            python3-pip python3-venv git zip unzip \
+            openjdk-17-jdk build-essential autoconf automake \
+            libtool pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev cmake libffi-dev libssl-dev
 
-      - name: Install Buildozer
+      - name: Install Buildozer and dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install buildozer cython
+          python3 -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install \
+            "git+https://github.com/kivy/buildozer" \
+            legacy-cgi \
+            "cython==0.29.34"
+
+      - name: Show build configuration
+        run: |
+          . .venv/bin/activate
+          buildozer --version
+          grep -E '^(android.ndk|android.ndk_api|android.archs|p4a.branch|p4a.commit|requirements) *=' buildozer.spec
 
       - name: Build debug APK
-        run: buildozer -v android debug
+        run: |
+          . .venv/bin/activate
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
