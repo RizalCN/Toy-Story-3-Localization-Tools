@@ -14,6 +14,11 @@ from kivy.uix.popup import Popup
 from kivy.uix.filechooser import FileChooserListView
 from kivy.utils import platform
 
+try:
+    from android_saf import pick_document, read_uri
+except Exception:
+    pick_document = read_uri = None
+
 from safe_translator_core import extract_csv, import_csv, patch_zip
 
 DEFAULT_DIR = '/storage/emulated/0/Download'
@@ -26,6 +31,7 @@ class SafeTranslatorApp(App):
         self.rootbox.add_widget(Label(text='Toy Story 3 — Safe Translator', size_hint_y=None, height=dp(42), font_size='20sp', bold=True))
         self.rootbox.add_widget(Label(text='DCT → CSV  •  CSV → DCT  •  Patch ZIP\nPanjang byte wajib sama; file asli tidak ditimpa.', size_hint_y=None, height=dp(48), font_size='13sp'))
         self.fields = {}
+        self._saf_paths = {}
         self._field('DCT sumber', 'ex_src', '*.dct')
         self._field('CSV ekspor / CSV terjemahan', 'csv', '*.csv')
         self._field('DCT hasil impor', 'im_out', '*.dct')
@@ -83,6 +89,27 @@ class SafeTranslatorApp(App):
         self.rootbox.add_widget(row)
 
     def choose_file(self, key, pattern):
+        if platform == 'android' and pick_document is not None:
+            mime = {'*.dct': '*/*', '*.csv': 'text/*', '*.zip': 'application/zip'}.get(pattern, '*/*')
+            self.log_msg('Membuka pemilih file Android… pilih file ' + (pattern or 'yang diperlukan'))
+            def picked(uri, name, error):
+                if error:
+                    self.log_msg(error)
+                    return
+                try:
+                    data = read_uri(uri)
+                    safe_name = os.path.basename(str(name or 'selected_file')).replace('/', '_').replace('\\', '_')
+                    if pattern and not safe_name.lower().endswith(pattern[1:].lower()):
+                        self.log_msg('File dipilih: ' + safe_name + ' (pastikan ekstensi sesuai ' + pattern + ')')
+                    dest = Path(self.user_data_dir) / safe_name
+                    dest.write_bytes(data)
+                    self.fields[key].text = str(dest)
+                    self._saf_paths[key] = str(dest)
+                    self.log_msg('File berhasil dibuka dan disalin ke penyimpanan aplikasi: ' + safe_name)
+                except Exception as exc:
+                    self.log_msg('Gagal menyalin file pilihan: ' + str(exc))
+            pick_document(picked, mime)
+            return
         start = DEFAULT_DIR if os.path.isdir(DEFAULT_DIR) else '/storage/emulated/0'
         chooser = FileChooserListView(path=start, filters=[pattern], dirselect=False)
         box = BoxLayout(orientation='vertical', spacing=dp(6), padding=dp(6))
